@@ -1,0 +1,14 @@
+services:
+  backend:
+    image: test-be
+    ports:
+      - "3001:3001"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+
+  frontend:
+    image: test-fe
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
