@@ -19,12 +19,12 @@ jobs:
 
     - name: Build and Push Backend
       run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest ./docker/backend/Dockerfile
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest -f ./docker/backend/Dockerfile
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest
 
     - name: Build and Push Frontend
       run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest ./docker/frontend/Dockerfile
+        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest -f ./docker/frontend/Dockerfile
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest
 
   deploy:
