@@ -14,7 +14,7 @@ RUN corepack enable && pnpm install --frozen-lockfile
 
 RUN pnpm --filter=db exec prisma generate
 
-EXPOSE 3000
+EXPOSE 3001
 
 WORKDIR /usr/src/app/apps/backend
 
