@@ -11,21 +11,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-    - name: Build and Push Backend
-      run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest -f ./docker/backend/Dockerfile .
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest
+      - name: Build and Push Backend
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-be:${{ github.sha }} -f ./docker/backend/Dockerfile .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/test-be:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/test-be:latest
 
-    - name: Build and Push Frontend
-      run: |
-        docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest -f ./docker/frontend/Dockerfile .
-        docker push ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest
+      - name: Build and Push Frontend
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:${{ github.sha }} -f ./docker/frontend/Dockerfile .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:${{ github.sha }} ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/test-fe:latest
 
   deploy:
     name: Deploy via SSH
@@ -33,17 +35,18 @@ jobs:
     needs: build-and-push
 
     steps:
-    - name: Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Pull latest images and restart services
-      run: |
-        ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          cd /home/ubuntu/test-deployment
-          docker-compose pull
-          docker-compose up -d
-        EOF
+      - name: Pull latest images and restart services
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            cd /home/ubuntu/test-deployment
+            docker-compose pull
+            docker-compose up -d
+            docker image prune -f
+          EOF
